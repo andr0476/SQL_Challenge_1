@@ -1,0 +1,25 @@
+-- These variables set parameters for the query. Based on the defaults, 
+-- the query will select all employees who as of Jan 1, 2001 make within
+-- 1% of the minimum salary for their job title as of Jan 1, 2000. (116 rows)
+SET @as_of_date = '2001-1-1';
+SET @compare_date = '2000-1-1';
+SET @pct = 1.01;
+
+
+SELECT first_name,
+       last_name,
+       S.salary,
+       T.*,
+       (SELECT MIN(S2.salary)
+		  FROM salaries AS S2
+		  JOIN titles AS T2 USING (emp_no)
+		 WHERE T2.title = T.title
+		   AND @compare_date BETWEEN S2.from_date and S2.to_date
+		   AND @compare_date BETWEEN T2.from_date and T2.to_date) AS min_salary
+  FROM employees
+  JOIN salaries AS S USING (emp_no)
+  JOIN titles AS T USING (emp_no)
+ WHERE @as_of_date BETWEEN S.from_date AND S.to_date
+   AND @as_of_date BETWEEN T.from_date AND T.to_date
+HAVING salary <= @pct * min_salary
+ORDER BY salary;
